@@ -194,30 +194,22 @@ mcp_servers:
     selected_servers=["math"]
 )
 [10:30:16] [strategy] Conservative mode selected
-[10:30:16] [strategy] Filtered tools: sqrt, factorial, multiply
+[10:30:16] [strategy] Filtered tools: power, factorial, multiply
 [10:30:16] [strategy] Historical context: Found 2 similar math queries
 [10:30:17] [plan] Generated solve():
 async def solve():
-    import json
-    # Calculate square root of 144
-    input1 = {"input": {"number": 144}}
-    result1 = await mcp.call_tool('sqrt', input1)
-    sqrt_result = json.loads(result1.content[0].text)["result"]
+    sqrt_result = await mcp.call_tool('power', {"input": {"a": 144, "b": 0.5}})
+    sqrt_val = parse_result(sqrt_result)
     
-    # Calculate factorial of 3
-    input2 = {"input": {"number": 3}}
-    result2 = await mcp.call_tool('factorial', input2)
-    fact_result = json.loads(result2.content[0].text)["result"]
+    fact_result = await mcp.call_tool('factorial', {"input": {"a": 3}})
+    fact_val = parse_result(fact_result)
     
-    # Multiply results
-    input3 = {"input": {"a": sqrt_result, "b": fact_result}}
-    result3 = await mcp.call_tool('multiply', input3)
-    final = json.loads(result3.content[0].text)["result"]
-    
-    return f"FINAL_ANSWER: {final}"
+    mult_result = await mcp.call_tool('multiply', {"input": {"a": sqrt_val, "b": fact_val}})
+    answer = parse_result(mult_result)
+    return f"FINAL_ANSWER: {answer}"
 
 [10:30:17] [action] Executing solve() in sandbox...
-[10:30:17] [action] Tool call 1: sqrt(144) → 12.0
+[10:30:17] [action] Tool call 1: power(144, 0.5) → 12.0
 [10:30:17] [action] Tool call 2: factorial(3) → 6
 [10:30:17] [action] Tool call 3: multiply(12.0, 6) → 72.0
 [10:30:17] [heuristics] Result sanitized: No modifications needed
@@ -246,13 +238,9 @@ async def solve():
 [10:35:23] [strategy] Historical context: Found 1 similar document search query
 [10:35:24] [plan] Generated solve():
 async def solve():
-    import json
-    # Search documents
-    input1 = {"input": {"query": "renewable energy policies"}}
-    result1 = await mcp.call_tool('search_stored_documents', input1)
-    doc_content = json.loads(result1.content[0].text)["result"]
-    
-    return f"FURTHER_PROCESSING_REQUIRED: {doc_content}"
+    result = await mcp.call_tool('duckduckgo_search_results', {"input": {"query": "renewable energy policies", "max_results": 5}})
+    content = parse_result(result)
+    return f"FURTHER_PROCESSING_REQUIRED: {content}"
 
 [10:35:24] [action] Executing solve() in sandbox...
 [10:35:24] [action] Tool call 1: search_stored_documents("renewable energy policies")
@@ -307,13 +295,9 @@ async def solve():
 [10:40:11] [strategy] No relevant historical context found
 [10:40:12] [plan] Generated solve():
 async def solve():
-    import json
-    # Extract webpage content
-    input1 = {"input": {"url": "https://www.example-ai-blog.com/article"}}
-    result1 = await mcp.call_tool('convert_webpage_url_into_markdown', input1)
-    webpage_content = json.loads(result1.content[0].text)["result"]
-    
-    return f"FURTHER_PROCESSING_REQUIRED: {webpage_content}"
+    result = await mcp.call_tool('download_raw_html_from_url', {"input": {"url": "https://www.example-ai-blog.com/article"}})
+    content = parse_result(result)
+    return f"FURTHER_PROCESSING_REQUIRED: {content}"
 
 [10:40:12] [action] Executing solve() in sandbox...
 [10:40:12] [action] Tool call 1: convert_webpage_url_into_markdown(url)
@@ -393,7 +377,7 @@ async def solve():
 │   ├── perception.py                # Query perception
 │   └── tools.py                      # Tool utilities
 ├── prompts/
-│   ├── decision_prompt_conservative.txt  # 127 words (reduced from 729)
+│   ├── decision_prompt_conservative.txt  # 277 words (reduced from 729)
 │   ├── decision_prompt_exploratory_parallel.txt
 │   ├── decision_prompt_exploratory_sequential.txt
 │   └── perception_prompt.txt
@@ -422,14 +406,24 @@ Commands:
 
 ## Decision Prompt Optimization
 
-The decision prompt was reduced from **729 words to 127 words** (82% reduction) while maintaining:
+The decision prompt was reduced from **729 words to 277 words** (62% reduction) while maintaining:
 - All core functionality
-- Tool calling syntax
+- Tool calling syntax with safe parsing (`parse_result()` helper)
 - Result parsing rules
 - FINAL_ANSWER vs FURTHER_PROCESSING_REQUIRED logic
-- Example code patterns
+- Three comprehensive examples (Math, Search, Summarize)
+- Support for decimal exponents (e.g., square root using `power(144, 0.5)`)
 
-**Word Count:** 127 words (target: <300 words) ✅
+**Word Count:** **277 words** (target: <300 words) ✅
+
+**File:** `prompts/decision_prompt_conservative.txt`
+
+The prompt includes:
+- Task description and rules
+- Safe result parsing instructions
+- Helper function usage (`parse_result()`)
+- Three complete examples covering different use cases
+- Formatting requirements for final answers
 
 ## Historical Conversation Indexing
 
@@ -453,9 +447,22 @@ See `modules/heuristics.py` for all 10 heuristics:
 - Result sanitization
 - Context enhancement
 
-## Bug Fix Report
+## Recent Updates
 
-See `BUG_FIX_REPORT.md` for details on the framework bug fix.
+### Power Tool Enhancement
+- Updated `PowerInput` to accept `float` for exponent `b` (supports decimal exponents like 0.5 for square root)
+- Updated `PowerOutput` to return `float` (handles decimal results)
+- Enables calculations like `power(144, 0.5)` for square root operations
+
+### Safe Result Parsing
+- Added `parse_result()` helper function in sandbox for safe MCP result parsing
+- Handles empty content, different response formats, and JSON parsing errors
+- Prevents "Expecting value: line 1 column 1 (char 0)" errors
+
+### Rate Limiting
+- Automatic rate limiting for Gemini API (5 seconds between calls)
+- Automatic retry with exponential backoff on 429 errors
+- Extracts retry delay from error messages for smart waiting
 
 ## License
 
