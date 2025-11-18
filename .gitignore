@@ -1,5 +1,59 @@
-*.pyc
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
 .env
-/documents/
-/faiss_index/
+.env.local
+
+# Memory and session data
+memory/
+*.json
+!config/*.json
+
+# FAISS index
+faiss_index/
+
+# Documents (keep structure but not content)
+documents/*.pdf
+documents/*.docx
+documents/*.txt
+documents/images/
+
+# Lock files (optional - you may want to keep uv.lock)
+# uv.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# Fix documentation
+*_FIX*.md
+*TEST*.md
+*CHECKLIST*.md
+
+# Python version
+.python-version
