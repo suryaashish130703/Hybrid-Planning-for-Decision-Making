@@ -542,48 +542,15 @@ See `modules/heuristics.py` for all 10 heuristics:
 
 ## Bug Fix Report
 
-### Initial Framework Bug
+A critical framework bug was identified and fixed in the initial implementation. The bug caused the agent to bypass the entire strategy module, preventing tool filtering, memory fallback, and planning modes from working.
 
-**Location:** `core/loop.py`
+**For complete details, see:** [`BUG_FIX_REPORT.md`](BUG_FIX_REPORT.md)
 
-**Problem:** The agent loop was bypassing the entire strategy module by directly calling `modules.decision.generate_plan` instead of using `core.strategy.decide_next_action`.
-
-**Impact:**
-- ❌ Tool filtering based on perception hints was not working
-- ❌ Memory fallback on failures was not triggered
-- ❌ Planning modes (conservative/exploratory) were ignored
-- ❌ Failed tool tracking for replanning was not functional
-
-**Root Cause:**
-```python
-# BEFORE (Buggy Code)
-from modules.decision import generate_plan
-plan = await generate_plan(...)  # Bypassed strategy module
-```
-
-**Solution:**
-```python
-# AFTER (Fixed Code)
-from core.strategy import decide_next_action
-
-plan = await decide_next_action(
-    context=self.context,
-    perception=perception,
-    memory_items=self.context.memory.get_session_items(),
-    all_tools=selected_tools,
-    last_result=last_result,
-    failed_tools=failed_tools,
-    force_replan=force_replan,
-)
-```
-
-**What This Fixed:**
-- ✅ Now properly filters tools based on perception hints
-- ✅ Memory fallback activates on tool failures
-- ✅ Planning modes are respected (conservative/exploratory)
-- ✅ Failed tools are tracked and avoided in replans
-
-**Additional Details:** See `ANSWERS.md` (Question 2) for complete bug fix documentation.
+**Summary:**
+- **Location:** `core/loop.py`
+- **Issue:** Bypassed strategy module by calling `modules.decision.generate_plan` directly
+- **Fix:** Changed to use `core.strategy.decide_next_action` with full context
+- **Impact:** Now properly supports tool filtering, memory fallback, planning modes, and failed tool tracking
 
 ## Recent Updates
 
